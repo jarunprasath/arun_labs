@@ -1,0 +1,1458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Compare Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: an instrument-style workbench. Slim header with mode tabs, two source cards
+   (Left / Right) facing each other, a control strip, then the result grid. */
+:root {
+  --bg: #f3f5f9;
+  --surface: #ffffff;
+  --surface-2: #e9edf4;
+  --line: #d3dae5;
+  --line-strong: #b7c1d0;
+  --fg: #152033;
+  --muted: #5b6779;
+  --accent: #2f56c9;
+  --accent-soft: #e2e9fb;
+  --accent-fg: #ffffff;
+  --del-bg: #fdecee;
+  --del-mark: #f5b5bf;
+  --del-fg: #a3192d;
+  --ins-bg: #e5f5eb;
+  --ins-mark: #a6dfba;
+  --ins-fg: #15703a;
+  --chg-bg: #fff6dc;
+  --chg-fg: #8a5a00;
+  --gap: #eef1f6;
+  --gap-stripe: #e1e6ee;
+  --focus: #2f56c9;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131b; --surface: #151c27; --surface-2: #1b2431; --line: #2a3546; --line-strong: #3a475b;
+    --fg: #e3e8f0; --muted: #96a2b4; --accent: #7f9dff; --accent-soft: #1f2b4a; --accent-fg: #0e131b;
+    --del-bg: #351a21; --del-mark: #7c2c3c; --del-fg: #ffb4c0;
+    --ins-bg: #142c1d; --ins-mark: #2a6b41; --ins-fg: #9fe3b6;
+    --chg-bg: #2e2612; --chg-fg: #f1cd7a;
+    --gap: #121822; --gap-stripe: #19212d; --focus: #7f9dff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131b; --surface: #151c27; --surface-2: #1b2431; --line: #2a3546; --line-strong: #3a475b;
+  --fg: #e3e8f0; --muted: #96a2b4; --accent: #7f9dff; --accent-soft: #1f2b4a; --accent-fg: #0e131b;
+  --del-bg: #351a21; --del-mark: #7c2c3c; --del-fg: #ffb4c0;
+  --ins-bg: #142c1d; --ins-mark: #2a6b41; --ins-fg: #9fe3b6;
+  --chg-bg: #2e2612; --chg-fg: #f1cd7a;
+  --gap: #121822; --gap-stripe: #19212d; --focus: #7f9dff;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 40px;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.wrap { max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+/* Header */
+header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding-block: 16px 4px; }
+.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.brand h1 { font-family: var(--font-display); font-weight: 600; font-size: 24px; letter-spacing: 0.01em; margin: 0; }
+.brand h1 .glyph { display: inline-grid; grid-template-columns: 6px 6px; gap: 3px; margin-right: 10px; vertical-align: 2px; }
+.brand h1 .glyph i { width: 6px; height: 14px; border-radius: 1px; background: var(--del-mark); }
+.brand h1 .glyph i + i { background: var(--ins-mark); }
+.brand p { margin: 0; color: var(--muted); font-size: 13px; }
+nav.tabs { display: flex; gap: 2px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 3px; margin-left: auto; flex-wrap: wrap; }
+nav.tabs a { text-decoration: none; color: var(--muted); font-weight: 500; padding: 6px 14px; border-radius: 6px; font-size: 13.5px; }
+nav.tabs a:hover { color: var(--fg); }
+nav.tabs a[aria-current="page"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+
+/* Notice */
+.notice { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--accent-soft); color: var(--fg); border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+.notice b { font-weight: 600; }
+
+/* Source cards */
+.sources { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: stretch; }
+.src {
+  min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 8px; position: relative;
+}
+.src.drag { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.src .side { font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+.src .side .dot { width: 8px; height: 8px; border-radius: 2px; }
+.src[data-side="left"] .side .dot { background: var(--del-mark); }
+.src[data-side="right"] .side .dot { background: var(--ins-mark); }
+.src .name { font-family: var(--font-mono); font-size: 13.5px; font-weight: 500; overflow-wrap: anywhere; }
+.src .meta { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.src .acts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.src .hint { color: var(--muted); font-size: 12px; }
+.pill { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 1px 8px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; }
+.pill.example { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+.pill.edited { background: var(--chg-bg); color: var(--chg-fg); }
+.swap { align-self: center; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-strong); background: var(--surface);
+  border-radius: 6px; padding: 5px 11px; cursor: pointer; font-size: 13px; font-weight: 500; white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--fg); border-color: var(--line); }
+.btn:disabled { opacity: 0.45; cursor: default; border-color: var(--line); }
+.btn svg { width: 14px; height: 14px; }
+
+/* Control strip */
+.strip { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; gap: 6px; align-items: baseline; border-radius: 6px; padding: 3px 9px; font-size: 12.5px; font-variant-numeric: tabular-nums; background: var(--surface-2); color: var(--muted); }
+.chip b { color: var(--fg); font-weight: 600; }
+.chip.del { background: var(--del-bg); color: var(--del-fg); }
+.chip.ins { background: var(--ins-bg); color: var(--ins-fg); }
+.chip.chg { background: var(--chg-bg); color: var(--chg-fg); }
+.chip.ok { background: var(--ins-bg); color: var(--ins-fg); }
+.chip.del b, .chip.ins b, .chip.chg b, .chip.ok b { color: inherit; }
+button.chip { border: 1px solid transparent; cursor: pointer; }
+button.chip[aria-pressed="true"] { border-color: currentColor; }
+.opts { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.opts label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; font-size: 13px; color: var(--muted); }
+.opts label:hover { color: var(--fg); }
+.opts input { accent-color: var(--accent); margin: 0; }
+.nav { display: flex; gap: 6px; align-items: center; margin-left: auto; flex-wrap: wrap; }
+.nav .pos { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; min-width: 9ch; text-align: center; }
+.field { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+.field select, .field input[type="text"] { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; padding: 4px 8px; max-width: 220px; }
+
+/* Text diff grid */
+.view { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.scroll { overflow-x: auto; }
+table.diff { width: 100%; border-collapse: collapse; table-layout: fixed; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.5; }
+table.diff col.ln { width: 4.6em; }
+table.diff col.act { width: 2.2em; }
+table.diff td { padding: 0 8px; vertical-align: top; border: 0; }
+table.diff td.ln { color: var(--muted); text-align: right; user-select: none; font-variant-numeric: tabular-nums; background: var(--surface-2); padding-right: 6px; opacity: 0.85; }
+table.diff td.code { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; tab-size: 4; }
+table.diff.nowrap td.code { white-space: pre; overflow-wrap: normal; word-break: normal; }
+table.diff.nowrap { table-layout: auto; width: max-content; min-width: 100%; }
+table.diff td.mid { background: var(--surface-2); padding: 0; text-align: center; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+tr.chg td.code { background: var(--chg-bg); }
+tr.del td.code.l { background: var(--del-bg); }
+tr.ins td.code.r { background: var(--ins-bg); }
+td.code.empty { background: repeating-linear-gradient(135deg, var(--gap) 0 6px, var(--gap-stripe) 6px 8px) !important; }
+td.code.l mark { background: var(--del-mark); color: inherit; border-radius: 2px; }
+td.code.r mark { background: var(--ins-mark); color: inherit; border-radius: 2px; }
+tr.blockstart td { border-top: 1px solid var(--line-strong); }
+tr.blockend td { border-bottom: 1px solid var(--line-strong); }
+tr.current td.ln { background: var(--accent); color: var(--accent-fg); opacity: 1; }
+tr.fold td { background: var(--surface-2); color: var(--muted); font-family: var(--font-body); font-size: 12.5px; text-align: center; padding: 3px 8px; }
+tr.fold button { background: none; border: 0; color: var(--accent); cursor: pointer; font-weight: 500; padding: 2px 6px; }
+.copyarrow { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 13px; line-height: 1.4; padding: 0 2px; border-radius: 4px; }
+.copyarrow:hover { color: var(--accent); background: var(--accent-soft); }
+.empty-state { padding: 28px 16px; text-align: center; color: var(--muted); }
+.empty-state strong { display: block; color: var(--fg); font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+
+.editors { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.editors textarea { width: 100%; min-height: 220px; resize: vertical; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 8px; padding: 10px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.5; tab-size: 4; }
+
+/* Generic data grid (tables, folders, hex) */
+table.grid { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.grid th { position: sticky; top: 0; background: var(--surface-2); text-align: left; font-weight: 600; font-size: 12px; letter-spacing: 0.02em; color: var(--muted); padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; z-index: 1; }
+table.grid td { padding: 5px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.grid tr:last-child td { border-bottom: 0; }
+table.grid td.mono, table.grid th.mono { font-family: var(--font-mono); font-size: 12.5px; }
+table.grid td.num { text-align: right; }
+.status { display: inline-block; min-width: 72px; text-align: center; border-radius: 4px; padding: 1px 6px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; }
+.status.same { background: var(--surface-2); color: var(--muted); }
+.status.diff { background: var(--chg-bg); color: var(--chg-fg); }
+.status.left { background: var(--del-bg); color: var(--del-fg); }
+.status.right { background: var(--ins-bg); color: var(--ins-fg); }
+.status.pending { background: var(--surface-2); color: var(--muted); font-weight: 500; }
+tr.row-del td { background: var(--del-bg); }
+tr.row-ins td { background: var(--ins-bg); }
+td.cell-chg { background: var(--chg-bg); }
+td.cell-chg del { color: var(--del-fg); text-decoration: line-through; text-decoration-color: currentColor; display: block; }
+td.cell-chg ins { color: var(--ins-fg); text-decoration: none; display: block; font-weight: 500; }
+th .colnote { display: block; font-weight: 500; font-size: 11px; letter-spacing: 0; }
+th.col-del { color: var(--del-fg); background: var(--del-bg); }
+th.col-ins { color: var(--ins-fg); background: var(--ins-bg); }
+.tablewrap { overflow: auto; max-height: 70vh; }
+.more { padding: 10px; text-align: center; border-top: 1px solid var(--line); }
+.warnline { color: var(--chg-fg); background: var(--chg-bg); padding: 6px 12px; font-size: 12.5px; }
+
+/* Folder list */
+tr.dirrow td { background: var(--surface-2); font-family: var(--font-mono); font-size: 12px; color: var(--muted); padding-block: 4px; }
+tr.filerow.clickable { cursor: pointer; }
+tr.filerow.clickable:hover td { background: var(--accent-soft); }
+.fname { font-family: var(--font-mono); font-size: 12.5px; overflow-wrap: anywhere; }
+.progress { height: 3px; background: var(--surface-2); }
+.progress > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width 0.2s; }
+
+/* Hex */
+table.hex { border-collapse: collapse; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; width: max-content; min-width: 100%; }
+table.hex td { padding: 0 2px; text-align: center; }
+table.hex td.off { color: var(--muted); padding: 0 12px 0 10px; text-align: left; background: var(--surface-2); }
+table.hex td.sep { width: 18px; }
+table.hex td.asc { text-align: left; padding: 0 10px; white-space: pre; letter-spacing: 0.02em; }
+table.hex td.gapcol { width: 10px; }
+table.hex th { font-weight: 500; color: var(--muted); font-size: 11.5px; padding: 6px 2px; background: var(--surface-2); position: sticky; top: 0; }
+table.hex b { font-weight: inherit; }
+table.hex .d { background: var(--chg-bg); color: var(--chg-fg); font-weight: 600; border-radius: 2px; }
+table.hex .x { color: var(--line-strong); }
+table.hex .add { background: var(--ins-bg); color: var(--ins-fg); }
+table.hex .rem { background: var(--del-bg); color: var(--del-fg); }
+table.hex tr.hasdiff td.off { color: var(--chg-fg); font-weight: 600; }
+
+footer { color: var(--muted); font-size: 12.5px; text-align: center; padding-top: 6px; }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 13px; z-index: 20; }
+
+@media (max-width: 760px) {
+  .sources { grid-template-columns: 1fr; }
+  .swap { justify-self: center; }
+  .editors { grid-template-columns: 1fr; }
+  nav.tabs { margin-left: 0; }
+  .nav { margin-left: 0; }
+  table.diff { font-size: 11.5px; }
+  table.diff col.ln { width: 3.4em; }
+  table.diff td { padding: 0 4px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1><span class="glyph" aria-hidden="true"><i></i><i></i></span>Compare Studio</h1>
+      <p>Text, folders, spreadsheets and binaries. Files are read in your browser and never uploaded.</p>
+    </div>
+    <nav class="tabs" aria-label="Comparison type">
+      <a href="#text" data-mode="text">Text</a>
+      <a href="#folders" data-mode="folders">Folders</a>
+      <a href="#tables" data-mode="tables">Tables</a>
+      <a href="#hex" data-mode="hex">Hex</a>
+    </nav>
+  </header>
+
+  <!-- TEXT -->
+  <section id="mode-text" class="mode" hidden>
+    <div class="notice" id="t-notice"><b>Example loaded.</b> Two versions of a product timeliness check script. Open or drop your own files on either side.</div>
+    <div class="sources">
+      <div class="src" data-side="left" id="t-left"></div>
+      <button class="btn ghost swap" id="t-swap" title="Swap left and right" aria-label="Swap left and right">⇄ Swap</button>
+      <div class="src" data-side="right" id="t-right"></div>
+    </div>
+    <div class="strip">
+      <div class="chips" id="t-summary"></div>
+      <div class="opts">
+        <label><input type="checkbox" id="t-ws"> Ignore whitespace</label>
+        <label><input type="checkbox" id="t-case"> Ignore case</label>
+        <label><input type="checkbox" id="t-only" checked> Differences only</label>
+        <label><input type="checkbox" id="t-wrap" checked> Wrap lines</label>
+      </div>
+      <div class="nav">
+        <button class="btn" id="t-prev" aria-label="Previous difference">↑ Prev</button>
+        <span class="pos" id="t-pos">–</span>
+        <button class="btn" id="t-next" aria-label="Next difference">↓ Next</button>
+        <button class="btn" id="t-edit" aria-pressed="false">Edit text</button>
+        <button class="btn" id="t-copy">Copy unified diff</button>
+      </div>
+    </div>
+    <div class="editors" id="t-editors" hidden>
+      <div><label class="sr" for="t-ed-left">Left text</label><textarea id="t-ed-left" spellcheck="false"></textarea></div>
+      <div><label class="sr" for="t-ed-right">Right text</label><textarea id="t-ed-right" spellcheck="false"></textarea></div>
+    </div>
+    <div class="view"><div class="scroll" id="t-view"></div></div>
+  </section>
+
+  <!-- FOLDERS -->
+  <section id="mode-folders" class="mode" hidden>
+    <div class="notice" id="f-notice"><b>Example loaded.</b> Two releases of a small processing package. Pick or drop your own folders on either side.</div>
+    <div class="sources">
+      <div class="src" data-side="left" id="f-left"></div>
+      <button class="btn ghost swap" id="f-swap" title="Swap left and right" aria-label="Swap left and right">⇄ Swap</button>
+      <div class="src" data-side="right" id="f-right"></div>
+    </div>
+    <div class="strip">
+      <div class="chips" id="f-filters" role="group" aria-label="Filter files"></div>
+      <div class="nav"><span class="pos" id="f-progress-label"></span></div>
+    </div>
+    <div class="view">
+      <div class="progress" id="f-progress" hidden><i></i></div>
+      <div class="tablewrap" id="f-view"></div>
+    </div>
+  </section>
+
+  <!-- TABLES -->
+  <section id="mode-tables" class="mode" hidden>
+    <div class="notice" id="g-notice"><b>Example loaded.</b> Two issues of a verification control (VCD) extract. Open your own CSV, TSV or Excel files.</div>
+    <div class="sources">
+      <div class="src" data-side="left" id="g-left"></div>
+      <button class="btn ghost swap" id="g-swap" title="Swap left and right" aria-label="Swap left and right">⇄ Swap</button>
+      <div class="src" data-side="right" id="g-right"></div>
+    </div>
+    <div class="strip">
+      <div class="chips" id="g-summary"></div>
+      <div class="opts">
+        <label class="field">Match rows by <select id="g-key"></select></label>
+        <label><input type="checkbox" id="g-header" checked> First row is header</label>
+        <label><input type="checkbox" id="g-ws" checked> Ignore whitespace</label>
+        <label><input type="checkbox" id="g-case"> Ignore case</label>
+        <label><input type="checkbox" id="g-num" checked> Numbers by value</label>
+        <label><input type="checkbox" id="g-only" checked> Differences only</label>
+        <label><input type="checkbox" id="g-cols"> Hide unchanged columns</label>
+      </div>
+    </div>
+    <div class="view"><div class="tablewrap" id="g-view"></div></div>
+  </section>
+
+  <!-- HEX -->
+  <section id="mode-hex" class="mode" hidden>
+    <div class="notice" id="h-notice"><b>Example loaded.</b> Two 64-byte telemetry frames with a CCSDS-style header. Open your own binary files.</div>
+    <div class="sources">
+      <div class="src" data-side="left" id="h-left"></div>
+      <button class="btn ghost swap" id="h-swap" title="Swap left and right" aria-label="Swap left and right">⇄ Swap</button>
+      <div class="src" data-side="right" id="h-right"></div>
+    </div>
+    <div class="strip">
+      <div class="chips" id="h-summary"></div>
+      <div class="nav">
+        <label class="field" for="h-goto">Offset <input type="text" id="h-goto" placeholder="0x0000" size="10"></label>
+        <button class="btn" id="h-go">Go</button>
+        <button class="btn" id="h-prevpage" aria-label="Previous page">◀ Page</button>
+        <button class="btn" id="h-nextpage" aria-label="Next page">Page ▶</button>
+        <button class="btn" id="h-prev">↑ Prev diff</button>
+        <button class="btn" id="h-next">↓ Next diff</button>
+      </div>
+    </div>
+    <div class="view"><div class="tablewrap" id="h-view"></div></div>
+  </section>
+
+  <footer>Compare Studio by Arun Prasath J · Text compare uses a Myers O(ND) diff · Excel files are parsed with SheetJS</footer>
+</div>
+
+<input type="file" id="picker" hidden>
+<input type="file" id="dirpicker" webkitdirectory directory multiple hidden>
+
+<script>
+"use strict";
+/* ============================================================
+   Helpers
+   ============================================================ */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmtBytes = n => n < 1024 ? n + " B" : n < 1048576 ? (n / 1024).toFixed(1) + " KB" : (n / 1048576).toFixed(2) + " MB";
+const fmtNum = n => n.toLocaleString("en-GB");
+const fmtDate = t => t ? new Date(t).toLocaleString("en-GB", { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+let toastTimer;
+function toast(msg) {
+  let t = $(".toast");
+  if (!t) { t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200);
+}
+async function copyText(text, label) {
+  try { await navigator.clipboard.writeText(text); toast(label + " copied"); }
+  catch (e) {
+    const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch (_) {}
+    ta.remove(); toast(ok ? label + " copied" : "Copy blocked here. Select the text manually.");
+  }
+}
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("compare-studio:" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("compare-studio:" + k, JSON.stringify(v)); } catch (e) {} }
+};
+function isBinary(bytes) {
+  const n = Math.min(bytes.length, 8192);
+  for (let i = 0; i < n; i++) if (bytes[i] === 0) return true;
+  return false;
+}
+const TABLE_EXT = /\.(csv|tsv|tab|txt|xlsx|xlsm|xls|ods)$/i;
+const SHEET_EXT = /\.(xlsx|xlsm|xls|ods)$/i;
+
+/* ============================================================
+   Diff engine: Myers O(ND) with bisection (linear space)
+   ops: [type, i, j] with type 0 = equal, 1 = delete (left only), 2 = insert (right only)
+   ============================================================ */
+function diffSeq(a, b, budgetMs) {
+  const ids = new Map(); let n = 0;
+  const A = new Int32Array(a.length), B = new Int32Array(b.length);
+  for (let i = 0; i < a.length; i++) { let v = ids.get(a[i]); if (v === undefined) { v = n++; ids.set(a[i], v); } A[i] = v; }
+  for (let i = 0; i < b.length; i++) { let v = ids.get(b[i]); if (v === undefined) { v = n++; ids.set(b[i], v); } B[i] = v; }
+  const ops = [];
+  // Shortcut: when the two sides share no element at all, everything is a replacement.
+  const inA = new Uint8Array(n);
+  for (let i = 0; i < A.length; i++) inA[A[i]] = 1;
+  let shared = false;
+  for (let i = 0; i < B.length && !shared; i++) if (inA[B[i]]) shared = true;
+  if (!shared) {
+    for (let i = 0; i < A.length; i++) ops.push([1, i, -1]);
+    for (let j = 0; j < B.length; j++) ops.push([2, -1, j]);
+    return ops;
+  }
+  diffRange(A, 0, A.length, B, 0, B.length, ops, performance.now() + (budgetMs || 4000));
+  return ops;
+}
+function diffRange(A, aLo, aHi, B, bLo, bHi, ops, deadline) {
+  while (aLo < aHi && bLo < bHi && A[aLo] === B[bLo]) { ops.push([0, aLo, bLo]); aLo++; bLo++; }
+  let sa = aHi, sb = bHi;
+  while (sa > aLo && sb > bLo && A[sa - 1] === B[sb - 1]) { sa--; sb--; }
+  if (aLo === sa) { for (let j = bLo; j < sb; j++) ops.push([2, -1, j]); }
+  else if (bLo === sb) { for (let i = aLo; i < sa; i++) ops.push([1, i, -1]); }
+  else {
+    const split = performance.now() > deadline ? null : bisect(A, aLo, sa, B, bLo, sb, deadline);
+    if (!split) {
+      for (let i = aLo; i < sa; i++) ops.push([1, i, -1]);
+      for (let j = bLo; j < sb; j++) ops.push([2, -1, j]);
+    } else {
+      diffRange(A, aLo, aLo + split[0], B, bLo, bLo + split[1], ops, deadline);
+      diffRange(A, aLo + split[0], sa, B, bLo + split[1], sb, ops, deadline);
+    }
+  }
+  for (let k = 0; k < aHi - sa; k++) ops.push([0, sa + k, sb + k]);
+}
+function bisect(A, aLo, aHi, B, bLo, bHi, deadline) {
+  const N = aHi - aLo, M = bHi - bLo;
+  const maxD = Math.ceil((N + M) / 2), vOff = maxD, vLen = 2 * maxD + 2;
+  const v1 = new Int32Array(vLen).fill(-1), v2 = new Int32Array(vLen).fill(-1);
+  v1[vOff + 1] = 0; v2[vOff + 1] = 0;
+  const delta = N - M, front = (delta % 2 !== 0);
+  let k1s = 0, k1e = 0, k2s = 0, k2e = 0;
+  for (let d = 0; d < maxD; d++) {
+    if ((d & 31) === 0 && performance.now() > deadline) break;
+    for (let k1 = -d + k1s; k1 <= d - k1e; k1 += 2) {
+      const k1o = vOff + k1;
+      let x1 = (k1 === -d || (k1 !== d && v1[k1o - 1] < v1[k1o + 1])) ? v1[k1o + 1] : v1[k1o - 1] + 1;
+      let y1 = x1 - k1;
+      while (x1 < N && y1 < M && A[aLo + x1] === B[bLo + y1]) { x1++; y1++; }
+      v1[k1o] = x1;
+      if (x1 > N) k1e += 2;
+      else if (y1 > M) k1s += 2;
+      else if (front) {
+        const k2o = vOff + delta - k1;
+        if (k2o >= 0 && k2o < vLen && v2[k2o] !== -1) { if (x1 >= N - v2[k2o]) return [x1, y1]; }
+      }
+    }
+    for (let k2 = -d + k2s; k2 <= d - k2e; k2 += 2) {
+      const k2o = vOff + k2;
+      let x2 = (k2 === -d || (k2 !== d && v2[k2o - 1] < v2[k2o + 1])) ? v2[k2o + 1] : v2[k2o - 1] + 1;
+      let y2 = x2 - k2;
+      while (x2 < N && y2 < M && A[aLo + N - x2 - 1] === B[bLo + M - y2 - 1]) { x2++; y2++; }
+      v2[k2o] = x2;
+      if (x2 > N) k2e += 2;
+      else if (y2 > M) k2s += 2;
+      else if (!front) {
+        const k1o = vOff + delta - k2;
+        if (k1o >= 0 && k1o < vLen && v1[k1o] !== -1) {
+          const x1 = v1[k1o], y1 = vOff + x1 - k1o;
+          if (x1 >= N - x2) return [x1, y1];
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/* ============================================================
+   Generic source card (shared by all modes)
+   ============================================================ */
+function renderSource(el, side, info, actions) {
+  const label = side === "left" ? "Left" : "Right";
+  el.innerHTML = `
+    <div class="side"><span class="dot"></span>${label}
+      ${info.example ? '<span class="pill example">Example</span>' : ""}
+      ${info.edited ? '<span class="pill edited">Edited</span>' : ""}</div>
+    <div class="name">${info.name ? esc(info.name) : '<span class="hint">No file</span>'}</div>
+    <div class="meta">${info.meta || ""}</div>
+    <div class="acts">${actions}<span class="hint">or drop here</span></div>`;
+}
+function wireDrop(el, onFiles) {
+  el.addEventListener("dragover", e => { e.preventDefault(); el.classList.add("drag"); });
+  el.addEventListener("dragleave", () => el.classList.remove("drag"));
+  el.addEventListener("drop", e => { e.preventDefault(); el.classList.remove("drag"); onFiles(e.dataTransfer); });
+}
+function pickFile(accept) {
+  return new Promise(resolve => {
+    const p = $("#picker"); p.value = ""; p.accept = accept || "";
+    p.onchange = () => resolve(p.files[0] || null);
+    p.click();
+  });
+}
+
+/* ============================================================
+   TEXT MODE
+   ============================================================ */
+const T = {
+  side: { left: null, right: null },  // { name, text, eol, trailingEol, example, edited, size }
+  opts: Object.assign({ ws: false, case: false, only: true, wrap: true }, store.get("text-opts", {})),
+  rows: [], blocks: [], ops: [], current: -1, expanded: new Set(), editing: false
+};
+function textSide(name, text, extra) {
+  const eol = /\r\n/.test(text) ? "\r\n" : "\n";
+  return Object.assign({ name, text, eol, example: false, edited: false, size: new Blob([text]).size }, extra || {});
+}
+function splitLines(text) {
+  if (text === "") return [];
+  const lines = text.split(/\r\n|\r|\n/);
+  if (lines[lines.length - 1] === "") lines.pop();
+  return lines;
+}
+function textKey(line) {
+  let k = line;
+  if (T.opts.ws) k = k.replace(/\s+/g, "");
+  if (T.opts.case) k = k.toLowerCase();
+  return k;
+}
+function textCompute() {
+  const a = splitLines(T.side.left.text), b = splitLines(T.side.right.text);
+  T.a = a; T.b = b;
+  T.ops = diffSeq(a.map(textKey), b.map(textKey), 5000);
+  const rows = [], blocks = [];
+  let i = 0, consumedL = 0, consumedR = 0;
+  const ops = T.ops;
+  while (i < ops.length) {
+    if (ops[i][0] === 0) { rows.push({ t: "eq", l: ops[i][1], r: ops[i][2] }); consumedL++; consumedR++; i++; continue; }
+    const dels = [], ins = [];
+    while (i < ops.length && ops[i][0] !== 0) { if (ops[i][0] === 1) dels.push(ops[i][1]); else ins.push(ops[i][2]); i++; }
+    const blk = { id: blocks.length, rowStart: rows.length, l0: consumedL, l1: consumedL + dels.length, r0: consumedR, r1: consumedR + ins.length };
+    for (const [l, r] of alignBlock(dels, ins, a, b)) {
+      rows.push({ t: l >= 0 && r >= 0 ? "chg" : l >= 0 ? "del" : "ins", l, r, b: blk.id });
+    }
+    consumedL += dels.length; consumedR += ins.length;
+    blk.rowEnd = rows.length; blocks.push(blk);
+  }
+  T.rows = rows; T.blocks = blocks;
+  if (T.current >= blocks.length) T.current = blocks.length - 1;
+}
+/* Pair the removed and added lines of one block by similarity, keeping order,
+   so each changed line sits next to its real counterpart. */
+function lineSim(x, y) {
+  const tx = (textKey(x).match(TOK) || []).filter(t => !/^\s+$/.test(t));
+  const ty = (textKey(y).match(TOK) || []).filter(t => !/^\s+$/.test(t));
+  if (!tx.length && !ty.length) return 1;
+  const m = new Map(); for (const t of tx) m.set(t, (m.get(t) || 0) + 1);
+  let common = 0; for (const t of ty) { const c = m.get(t); if (c) { common++; m.set(t, c - 1); } }
+  return 2 * common / (tx.length + ty.length);
+}
+function alignBlock(dels, ins, a, b) {
+  const n = dels.length, m = ins.length;
+  const fallback = () => { const out = []; for (let k = 0; k < Math.max(n, m); k++) out.push([k < n ? dels[k] : -1, k < m ? ins[k] : -1]); return out; };
+  if (!n || !m || n * m > 40000) return fallback();
+  const MIN = 0.4;
+  const sim = Array.from({ length: n }, (_, i) => Array.from({ length: m }, (_, j) => lineSim(a[dels[i]], b[ins[j]])));
+  const S = Array.from({ length: n + 1 }, () => new Float64Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) {
+    const pair = sim[i][j] >= MIN ? sim[i][j] + S[i + 1][j + 1] : -1;
+    S[i][j] = Math.max(pair, S[i + 1][j], S[i][j + 1]);
+  }
+  const out = []; let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (sim[i][j] >= MIN && S[i][j] === sim[i][j] + S[i + 1][j + 1]) { out.push([dels[i], ins[j]]); i++; j++; }
+    else if (S[i][j] === S[i + 1][j]) { out.push([dels[i], -1]); i++; }
+    else { out.push([-1, ins[j]]); j++; }
+  }
+  while (i < n) out.push([dels[i++], -1]);
+  while (j < m) out.push([-1, ins[j++]]);
+  // Merge an unpaired removal directly followed by an unpaired addition into one changed row
+  const merged = [];
+  for (let k = 0; k < out.length; k++) {
+    const cur = out[k], nxt = out[k + 1];
+    if (cur[1] < 0 && nxt && nxt[0] < 0 && nxt[1] >= 0 && cur[0] >= 0) { merged.push([cur[0], nxt[1]]); k++; }
+    else merged.push(cur);
+  }
+  return merged;
+}
+const TOK = /\s+|[A-Za-z0-9_]+|[^\sA-Za-z0-9_]/g;
+function intraLine(lt, rt) {
+  const ta = lt.match(TOK) || [], tb = rt.match(TOK) || [];
+  if (ta.length + tb.length > 3000) return [`<mark>${esc(lt)}</mark>`, `<mark>${esc(rt)}</mark>`];
+  const key = t => { let k = t; if (T.opts.ws && /^\s+$/.test(k)) k = ""; if (T.opts.case) k = k.toLowerCase(); return k; };
+  const ops = diffSeq(ta.map(key), tb.map(key), 150);
+  let L = "", R = "";
+  for (const [t, i, j] of ops) {
+    if (t === 0) { L += esc(ta[i]); R += esc(tb[j]); }
+    else if (t === 1) L += `<mark>${esc(ta[i])}</mark>`;
+    else R += `<mark>${esc(tb[j])}</mark>`;
+  }
+  return [L.replace(/<\/mark><mark>/g, ""), R.replace(/<\/mark><mark>/g, "")];
+}
+const CTX = 3;
+function textRender() {
+  const view = $("#t-view");
+  const { rows, blocks, a, b } = T;
+  // summary
+  let chg = 0, del = 0, ins = 0;
+  for (const r of rows) { if (r.t === "chg") chg++; else if (r.t === "del") del++; else if (r.t === "ins") ins++; }
+  const identical = blocks.length === 0;
+  const sameText = T.side.left.text === T.side.right.text;
+  $("#t-summary").innerHTML = identical
+    ? `<span class="chip ok"><b>${sameText ? "Identical" : "Equivalent"}</b>${sameText ? "" : " with current ignore options"}</span><span class="chip"><b>${fmtNum(a.length)}</b> lines</span>`
+    : `<span class="chip"><b>${blocks.length}</b> difference${blocks.length === 1 ? "" : "s"}</span>
+       <span class="chip chg"><b>${fmtNum(chg)}</b> changed</span>
+       <span class="chip del"><b>${fmtNum(del)}</b> left only</span>
+       <span class="chip ins"><b>${fmtNum(ins)}</b> right only</span>`;
+  if (!rows.length) { view.innerHTML = `<div class="empty-state"><strong>Both sides are empty</strong>Open a file or paste text with Edit text.</div>`; textNav(); return; }
+
+  // which rows to show
+  const show = new Array(rows.length).fill(true);
+  const folds = []; // {at, from, to, runId}
+  if (T.opts.only) {
+    let s = 0;
+    while (s < rows.length) {
+      if (rows[s].t !== "eq") { s++; continue; }
+      let e = s; while (e < rows.length && rows[e].t === "eq") e++;
+      const runId = s;
+      const lead = s === 0 ? 0 : CTX, tail = e === rows.length ? 0 : CTX;
+      if (e - s > lead + tail + 1 && !T.expanded.has(runId)) {
+        for (let k = s + lead; k < e - tail; k++) show[k] = false;
+        folds.push({ at: s + lead, count: e - s - lead - tail, runId });
+      }
+      s = e;
+    }
+  }
+  const foldAt = new Map(folds.map(f => [f.at, f]));
+  const out = [];
+  out.push(`<table class="diff${T.opts.wrap ? "" : " nowrap"}"><colgroup><col class="ln"><col><col class="act"><col class="ln"><col></colgroup><tbody>`);
+  for (let k = 0; k < rows.length; k++) {
+    if (foldAt.has(k)) {
+      const f = foldAt.get(k);
+      out.push(`<tr class="fold"><td colspan="5">${fmtNum(f.count)} identical line${f.count === 1 ? "" : "s"} hidden <button data-expand="${f.runId}">Show</button></td></tr>`);
+    }
+    if (!show[k]) continue;
+    const r = rows[k];
+    let cls = r.t;
+    let act = "";
+    if (r.t !== "eq") {
+      const blk = blocks[r.b];
+      if (k === blk.rowStart) { cls += " blockstart"; act = `<button class="copyarrow" data-copy-r="${blk.id}" title="Copy this left block to the right" aria-label="Copy left block to right">→</button><button class="copyarrow" data-copy-l="${blk.id}" title="Copy this right block to the left" aria-label="Copy right block to left">←</button>`; }
+      if (k === blk.rowEnd - 1) cls += " blockend";
+      if (r.b === T.current) cls += " current";
+    }
+    let L = r.l >= 0 ? esc(a[r.l]) : "", R = r.r >= 0 ? esc(b[r.r]) : "";
+    if (r.t === "chg") [L, R] = intraLine(a[r.l], b[r.r]);
+    else if (r.t === "del") L = `<mark>${L}</mark>`;
+    else if (r.t === "ins") R = `<mark>${R}</mark>`;
+    out.push(`<tr class="${cls}"${r.t !== "eq" && k === blocks[r.b].rowStart ? ` id="blk-${r.b}"` : ""}>` +
+      `<td class="ln">${r.l >= 0 ? r.l + 1 : ""}</td><td class="code l${r.l < 0 ? " empty" : ""}">${L}</td>` +
+      `<td class="mid">${act}</td>` +
+      `<td class="ln">${r.r >= 0 ? r.r + 1 : ""}</td><td class="code r${r.r < 0 ? " empty" : ""}">${R}</td></tr>`);
+  }
+  out.push(`</tbody></table>`);
+  view.innerHTML = out.join("");
+  textNav();
+}
+function textNav() {
+  const n = T.blocks.length;
+  $("#t-pos").textContent = n ? (T.current >= 0 ? `${T.current + 1} of ${n}` : `${n} total`) : "None";
+  $("#t-prev").disabled = !n; $("#t-next").disabled = !n;
+}
+function textGo(dir) {
+  const n = T.blocks.length; if (!n) return;
+  T.current = T.current < 0 ? (dir > 0 ? 0 : n - 1) : (T.current + dir + n) % n;
+  textRender();
+  const el = document.getElementById("blk-" + T.current);
+  if (el) el.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}
+function textSources() {
+  for (const side of ["left", "right"]) {
+    const s = T.side[side];
+    const lines = splitLines(s.text).length;
+    renderSource($("#t-" + side), side, {
+      name: s.name, example: s.example, edited: s.edited,
+      meta: `${fmtNum(lines)} lines · ${fmtBytes(s.size)} · ${s.eol === "\r\n" ? "CRLF" : "LF"}`
+    }, `<button class="btn" data-open="${side}">Open file</button>${s.edited ? `<button class="btn" data-copytext="${side}">Copy text</button>` : ""}`);
+  }
+  $("#t-notice").hidden = !(T.side.left.example && T.side.right.example);
+}
+function textRefresh(keepPos) { if (!keepPos) { T.current = -1; T.expanded.clear(); } textCompute(); textSources(); textRender(); if (T.editing) syncEditors(); }
+function syncEditors() { $("#t-ed-left").value = T.side.left.text; $("#t-ed-right").value = T.side.right.text; }
+async function textLoadFile(side, file) {
+  if (!file) return;
+  if (file.size > 30 * 1048576) { toast("File is over 30 MB. Use Hex mode for very large files."); return; }
+  const buf = new Uint8Array(await file.arrayBuffer());
+  if (isBinary(buf)) { toast(`${file.name} looks binary. Opening it in Hex mode.`); hexLoadBytes(side, file.name, buf); location.hash = "hex"; return; }
+  const text = new TextDecoder("utf-8").decode(buf);
+  T.side[side] = textSide(file.name, text, { size: file.size });
+  textRefresh();
+}
+function textCopyBlock(id, toRight) {
+  const blk = T.blocks[id]; if (!blk) return;
+  const a = T.a.slice(), b = T.b.slice();
+  if (toRight) { b.splice(blk.r0, blk.r1 - blk.r0, ...a.slice(blk.l0, blk.l1)); setEdited("right", b); }
+  else { a.splice(blk.l0, blk.l1 - blk.l0, ...b.slice(blk.r0, blk.r1)); setEdited("left", a); }
+  textRefresh(true);
+  toast(toRight ? "Copied to right" : "Copied to left");
+}
+function setEdited(side, lines) {
+  const s = T.side[side];
+  s.text = lines.join(s.eol) + (lines.length ? s.eol : "");
+  s.edited = true; s.size = new Blob([s.text]).size;
+}
+function unifiedDiff(ctx) {
+  const ops = T.ops, a = T.a, b = T.b, n = ops.length;
+  const posA = new Int32Array(n + 1), posB = new Int32Array(n + 1);
+  for (let k = 0; k < n; k++) { posA[k + 1] = posA[k] + (ops[k][0] !== 2 ? 1 : 0); posB[k + 1] = posB[k] + (ops[k][0] !== 1 ? 1 : 0); }
+  const isCh = k => ops[k][0] !== 0;
+  const hunks = [];
+  let k = 0;
+  while (k < n) {
+    if (!isCh(k)) { k++; continue; }
+    const s = Math.max(0, k - ctx); let e = k;
+    while (e < n) {
+      if (isCh(e)) { e++; continue; }
+      let r = e; while (r < n && !isCh(r)) r++;
+      if (r < n && r - e <= 2 * ctx) { e = r; continue; }
+      e = Math.min(n, e + ctx); break;
+    }
+    if (hunks.length && s <= hunks[hunks.length - 1][1]) hunks[hunks.length - 1][1] = e; else hunks.push([s, e]);
+    k = e;
+  }
+  const out = [`--- ${T.side.left.name}`, `+++ ${T.side.right.name}`];
+  for (const [s, e] of hunks) {
+    const ac = posA[e] - posA[s], bc = posB[e] - posB[s];
+    out.push(`@@ -${ac ? posA[s] + 1 : posA[s]},${ac} +${bc ? posB[s] + 1 : posB[s]},${bc} @@`);
+    let m = s;
+    while (m < e) {
+      if (ops[m][0] === 0) { out.push(" " + a[ops[m][1]]); m++; continue; }
+      const minus = [], plus = [];
+      while (m < e && ops[m][0] !== 0) { if (ops[m][0] === 1) minus.push("-" + a[ops[m][1]]); else plus.push("+" + b[ops[m][2]]); m++; }
+      out.push(...minus, ...plus);
+    }
+  }
+  return hunks.length ? out.join("\n") + "\n" : "";
+}
+function textInit() {
+  for (const [id, key] of [["t-ws", "ws"], ["t-case", "case"], ["t-only", "only"], ["t-wrap", "wrap"]]) {
+    const el = $("#" + id); el.checked = T.opts[key];
+    el.addEventListener("change", () => { T.opts[key] = el.checked; store.set("text-opts", T.opts); if (key === "ws" || key === "case") textRefresh(); else textRender(); });
+  }
+  $("#t-prev").onclick = () => textGo(-1);
+  $("#t-next").onclick = () => textGo(1);
+  $("#t-swap").onclick = () => { [T.side.left, T.side.right] = [T.side.right, T.side.left]; textRefresh(); };
+  $("#t-copy").onclick = () => { const u = unifiedDiff(3); if (!u) toast("No differences to copy"); else copyText(u, "Unified diff"); };
+  $("#t-edit").onclick = () => {
+    T.editing = !T.editing; $("#t-editors").hidden = !T.editing; $("#t-edit").setAttribute("aria-pressed", String(T.editing));
+    $("#t-edit").textContent = T.editing ? "Close editor" : "Edit text";
+    if (T.editing) syncEditors();
+  };
+  let edTimer;
+  for (const side of ["left", "right"]) {
+    $("#t-ed-" + side).addEventListener("input", e => {
+      clearTimeout(edTimer);
+      edTimer = setTimeout(() => {
+        const s = T.side[side]; s.text = e.target.value; s.edited = true; s.example = false; s.size = new Blob([s.text]).size;
+        if (!s.name) s.name = side === "left" ? "left.txt" : "right.txt";
+        T.current = -1; textCompute(); textSources(); textRender();
+      }, 250);
+    });
+    wireDrop($("#t-" + side), dt => textLoadFile(side, dt.files[0]));
+  }
+  document.querySelector("#mode-text").addEventListener("click", async e => {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.dataset.open) textLoadFile(t.dataset.open, await pickFile());
+    else if (t.dataset.expand) { T.expanded.add(+t.dataset.expand); textRender(); }
+    else if (t.dataset.copyR) textCopyBlock(+t.dataset.copyR, true);
+    else if (t.dataset.copyL) textCopyBlock(+t.dataset.copyL, false);
+    else if (t.dataset.copytext) copyText(T.side[t.dataset.copytext].text, (t.dataset.copytext === "left" ? "Left" : "Right") + " text");
+  });
+  document.addEventListener("keydown", e => {
+    if (currentMode !== "text" || e.target.closest("textarea, input, select")) return;
+    if (e.key === "F7" || (e.altKey && e.key === "ArrowDown")) { e.preventDefault(); textGo(1); }
+    if (e.key === "F8" || (e.altKey && e.key === "ArrowUp")) { e.preventDefault(); textGo(-1); }
+  });
+  T.side.left = textSide("timeliness_check_v1.py", SAMPLE_TEXT_LEFT, { example: true });
+  T.side.right = textSide("timeliness_check_v2.py", SAMPLE_TEXT_RIGHT, { example: true });
+  textRefresh();
+}
+
+/* ============================================================
+   FOLDER MODE
+   ============================================================ */
+const F = { side: { left: null, right: null }, results: [], filter: "all", runId: 0 };
+async function collectFromInput(fileList) {
+  const files = new Map(); let root = "";
+  for (const f of fileList) {
+    const rel = f.webkitRelativePath || f.name;
+    const parts = rel.split("/");
+    if (!root) root = parts.length > 1 ? parts[0] : "";
+    files.set(parts.length > 1 ? parts.slice(1).join("/") : rel, f);
+  }
+  return { name: root || "Selected files", files };
+}
+async function collectFromDrop(dt) {
+  const items = [...dt.items].map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  const files = new Map();
+  if (items.length === 1 && items[0].isDirectory) {
+    await walk(items[0], "", files);
+    return { name: items[0].name, files };
+  }
+  for (const it of items) {
+    if (it.isDirectory) await walk(it, it.name + "/", files);
+    else files.set(it.name, await new Promise((res, rej) => it.file(res, rej)));
+  }
+  return { name: "Dropped items", files };
+}
+async function walk(dir, prefix, files) {
+  const reader = dir.createReader();
+  const all = [];
+  for (;;) {
+    const batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+    if (!batch.length) break;
+    all.push(...batch);
+  }
+  for (const e of all) {
+    if (e.isDirectory) await walk(e, prefix + e.name + "/", files);
+    else files.set(prefix + e.name, await new Promise((res, rej) => e.file(res, rej)));
+  }
+}
+function pickFolder() {
+  return new Promise(resolve => {
+    const p = $("#dirpicker"); p.value = "";
+    p.onchange = () => resolve(p.files.length ? p.files : null);
+    p.click();
+  });
+}
+async function sameBytes(f1, f2) {
+  if (f1.size !== f2.size) return false;
+  const CH = 4 * 1048576;
+  for (let off = 0; off < f1.size; off += CH) {
+    const [x, y] = await Promise.all([f1.slice(off, off + CH).arrayBuffer(), f2.slice(off, off + CH).arrayBuffer()]);
+    const a = new Uint8Array(x), b = new Uint8Array(y);
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+async function folderCompare() {
+  const run = ++F.runId;
+  const L = F.side.left.files, R = F.side.right.files;
+  const paths = [...new Set([...L.keys(), ...R.keys()])].sort((x, y) => {
+    const dx = x.includes("/") ? x.slice(0, x.lastIndexOf("/")) : "", dy = y.includes("/") ? y.slice(0, y.lastIndexOf("/")) : "";
+    return dx === dy ? x.localeCompare(y) : dx.localeCompare(dy);
+  });
+  F.results = paths.map(p => {
+    const l = L.get(p) || null, r = R.get(p) || null;
+    return { path: p, l, r, status: !l ? "right" : !r ? "left" : l.size !== r.size ? "diff" : "pending" };
+  });
+  folderRender();
+  const pending = F.results.filter(x => x.status === "pending");
+  const bar = $("#f-progress"); bar.hidden = !pending.length;
+  let done = 0;
+  const work = async () => {
+    while (pending.length) {
+      const item = pending.shift();
+      try { item.status = (await sameBytes(item.l, item.r)) ? "same" : "diff"; } catch (e) { item.status = "diff"; }
+      if (run !== F.runId) return;
+      done++;
+      bar.firstElementChild.style.width = (100 * done / (done + pending.length)) + "%";
+    }
+  };
+  let last = 0;
+  const ticker = setInterval(() => { if (run === F.runId && done !== last) { last = done; folderRender(); } }, 400);
+  await Promise.all([work(), work(), work(), work()]);
+  clearInterval(ticker);
+  if (run !== F.runId) return;
+  bar.hidden = true;
+  folderRender();
+}
+const STATUS_LABEL = { same: "Identical", diff: "Different", left: "Left only", right: "Right only", pending: "Checking…" };
+function folderRender() {
+  const res = F.results;
+  const c = { all: res.length, diff: 0, left: 0, right: 0, same: 0, pending: 0 };
+  for (const r of res) c[r.status]++;
+  const filters = [["all", "All", ""], ["diffs", "Differences", "chg"], ["diff", "Different", "chg"], ["left", "Left only", "del"], ["right", "Right only", "ins"], ["same", "Identical", "ok"]];
+  const cnt = k => k === "diffs" ? c.diff + c.left + c.right : c[k];
+  $("#f-filters").innerHTML = filters.map(([k, label, cls]) =>
+    `<button class="chip ${cls}" data-filter="${k}" aria-pressed="${F.filter === k}"><b>${fmtNum(cnt(k))}</b> ${label}</button>`).join("");
+  $("#f-progress-label").textContent = c.pending ? `Comparing contents… ${fmtNum(c.pending)} left` : `${fmtNum(c.all)} files compared by content`;
+  const keep = r => F.filter === "all" ? true : F.filter === "diffs" ? (r.status === "diff" || r.status === "left" || r.status === "right") : r.status === F.filter;
+  const rows = res.filter(keep);
+  if (!rows.length) { $("#f-view").innerHTML = `<div class="empty-state"><strong>Nothing to show</strong>No files match this filter.</div>`; return; }
+  const out = [`<table class="grid"><thead><tr><th>Name</th><th class="num">Left size</th><th>Left modified</th><th>Status</th><th class="num">Right size</th><th>Right modified</th></tr></thead><tbody>`];
+  let lastDir = null;
+  for (const r of rows) {
+    const idx = r.path.lastIndexOf("/");
+    const dir = idx >= 0 ? r.path.slice(0, idx) : "";
+    const base = idx >= 0 ? r.path.slice(idx + 1) : r.path;
+    if (dir !== lastDir) { out.push(`<tr class="dirrow"><td colspan="6">${dir ? esc(dir) + "/" : "(top level)"}</td></tr>`); lastDir = dir; }
+    const can = r.l && r.r;
+    out.push(`<tr class="filerow${can ? " clickable" : ""}"${can ? ` data-path="${esc(r.path)}" tabindex="0" title="Open this pair"` : ""}>
+      <td><span class="fname">${esc(base)}</span></td>
+      <td class="num">${r.l ? fmtBytes(r.l.size) : ""}</td><td>${r.l ? fmtDate(r.l.lastModified) : ""}</td>
+      <td><span class="status ${r.status}">${STATUS_LABEL[r.status]}</span></td>
+      <td class="num">${r.r ? fmtBytes(r.r.size) : ""}</td><td>${r.r ? fmtDate(r.r.lastModified) : ""}</td></tr>`);
+  }
+  out.push("</tbody></table>");
+  $("#f-view").innerHTML = out.join("");
+}
+function folderSources() {
+  for (const side of ["left", "right"]) {
+    const s = F.side[side];
+    let size = 0; for (const f of s.files.values()) size += f.size;
+    renderSource($("#f-" + side), side, { name: s.name, example: s.example, meta: `${fmtNum(s.files.size)} files · ${fmtBytes(size)}` },
+      `<button class="btn" data-pickdir="${side}">Choose folder</button>`);
+  }
+  $("#f-notice").hidden = !(F.side.left.example && F.side.right.example);
+}
+async function folderOpenPair(path) {
+  const r = F.results.find(x => x.path === path); if (!r || !r.l || !r.r) return;
+  const name = path.toLowerCase();
+  if (TABLE_EXT.test(name) && !/\.txt$/.test(name)) {
+    await tableLoadFile("left", r.l); await tableLoadFile("right", r.r); location.hash = "tables"; return;
+  }
+  const [x, y] = await Promise.all([r.l.arrayBuffer(), r.r.arrayBuffer()]);
+  const a = new Uint8Array(x), b = new Uint8Array(y);
+  if (isBinary(a) || isBinary(b) || r.l.size > 30 * 1048576) {
+    hexLoadBytes("left", F.side.left.name + "/" + path, a); hexLoadBytes("right", F.side.right.name + "/" + path, b); location.hash = "hex"; return;
+  }
+  const dec = new TextDecoder("utf-8");
+  T.side.left = textSide(F.side.left.name + "/" + path, dec.decode(a), { size: r.l.size });
+  T.side.right = textSide(F.side.right.name + "/" + path, dec.decode(b), { size: r.r.size });
+  textRefresh(); location.hash = "text";
+}
+function folderInit() {
+  for (const side of ["left", "right"]) {
+    wireDrop($("#f-" + side), async dt => { F.side[side] = await collectFromDrop(dt); folderSources(); folderCompare(); });
+  }
+  $("#mode-folders").addEventListener("click", async e => {
+    const b = e.target.closest("button");
+    if (b && b.dataset.pickdir) {
+      const files = await pickFolder(); if (!files) return;
+      F.side[b.dataset.pickdir] = await collectFromInput(files); folderSources(); folderCompare(); return;
+    }
+    if (b && b.dataset.filter) { F.filter = b.dataset.filter; folderRender(); return; }
+    const tr = e.target.closest("tr[data-path]"); if (tr) folderOpenPair(tr.dataset.path);
+  });
+  $("#mode-folders").addEventListener("keydown", e => {
+    const tr = e.target.closest("tr[data-path]");
+    if (tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); folderOpenPair(tr.dataset.path); }
+  });
+  $("#f-swap").onclick = () => { [F.side.left, F.side.right] = [F.side.right, F.side.left]; folderSources(); folderCompare(); };
+  const mk = (entries, when) => { const m = new Map(); for (const [p, txt] of entries) m.set(p, new File([txt], p.split("/").pop(), { lastModified: when })); return m; };
+  F.side.left = { name: "pdap-tools-1.4", example: true, files: mk(SAMPLE_FOLDER_LEFT, Date.UTC(2026, 8, 14, 9, 20)) };
+  F.side.right = { name: "pdap-tools-1.5", example: true, files: mk(SAMPLE_FOLDER_RIGHT, Date.UTC(2026, 9, 21, 16, 5)) };
+  F.filter = "all";
+  folderSources(); folderCompare();
+}
+
+/* ============================================================
+   TABLE MODE (CSV / TSV / Excel)
+   ============================================================ */
+const G = {
+  side: { left: null, right: null }, // { name, sheets: {name: rows}, sheetNames, sheet, example }
+  opts: Object.assign({ header: true, ws: true, case: false, num: true, only: true, cols: false }, store.get("table-opts", {})),
+  key: null, limit: 500
+};
+function parseDelimited(text) {
+  const first = text.slice(0, 5000).split(/\r?\n/)[0] || "";
+  const counts = [[",", (first.match(/,/g) || []).length], [";", (first.match(/;/g) || []).length], ["\t", (first.match(/\t/g) || []).length], ["|", (first.match(/\|/g) || []).length]];
+  counts.sort((x, y) => y[1] - x[1]);
+  const d = counts[0][1] ? counts[0][0] : ",";
+  const rows = []; let row = [], field = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else q = false; }
+      else field += ch;
+    } else if (ch === '"' && field === "") q = true;
+    else if (ch === d) { row.push(field); field = ""; }
+    else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); rows.push(row); row = []; field = "";
+    } else field += ch;
+  }
+  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+let xlsxPromise = null;
+function loadSheetJS() {
+  if (window.XLSX) return Promise.resolve();
+  if (!xlsxPromise) xlsxPromise = new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload = () => res(); s.onerror = () => { xlsxPromise = null; rej(new Error("SheetJS could not load")); };
+    document.head.appendChild(s);
+  });
+  return xlsxPromise;
+}
+async function tableLoadFile(side, file) {
+  if (!file) return;
+  try {
+    let sheets = {}, names = [];
+    if (SHEET_EXT.test(file.name)) {
+      toast("Reading workbook…");
+      await loadSheetJS();
+      const wb = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: false });
+      for (const n of wb.SheetNames) {
+        sheets[n] = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: false, defval: "", blankrows: false }).map(r => r.map(v => v == null ? "" : String(v)));
+        names.push(n);
+      }
+    } else {
+      const text = await file.text();
+      sheets = { [file.name]: parseDelimited(text) }; names = [file.name];
+    }
+    const prev = G.side[side === "left" ? "right" : "left"];
+    const match = prev && names.includes(prev.sheet) ? prev.sheet : names[0];
+    G.side[side] = { name: file.name, sheets, sheetNames: names, sheet: match, example: false };
+    G.key = null; G.limit = 500;
+    tableRefresh();
+  } catch (e) {
+    toast(SHEET_EXT.test(file.name) ? "Could not read the workbook. The Excel reader may be blocked here; try saving as CSV." : "Could not read that file as a table.");
+  }
+}
+function colLetter(n) { let s = ""; n++; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; }
+function cellNorm(v) {
+  let s = v == null ? "" : String(v);
+  if (G.opts.ws) s = s.replace(/\s+/g, " ").trim();
+  if (G.opts.case) s = s.toLowerCase();
+  return s;
+}
+function cellEq(x, y) {
+  const a = cellNorm(x), b = cellNorm(y);
+  if (a === b) return true;
+  if (G.opts.num) {
+    const re = /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/;
+    if (re.test(a.trim()) && re.test(b.trim())) return Number(a) === Number(b);
+  }
+  return false;
+}
+function tableShape(side) {
+  const s = G.side[side]; const rows = s.sheets[s.sheet] || [];
+  const width = rows.reduce((m, r) => Math.max(m, r.length), 0);
+  let headers, data, dataStart;
+  if (G.opts.header && rows.length) {
+    headers = []; const seen = {};
+    for (let c = 0; c < width; c++) {
+      let h = String(rows[0][c] ?? "").trim() || `Column ${colLetter(c)}`;
+      if (seen[h]) { seen[h]++; h = `${h} (${seen[h]})`; } else seen[h] = 1;
+      headers.push(h);
+    }
+    data = rows.slice(1); dataStart = 2;
+  } else {
+    headers = Array.from({ length: width }, (_, c) => colLetter(c)); data = rows; dataStart = 1;
+  }
+  return { headers, data, dataStart };
+}
+function tableCompute() {
+  const L = tableShape("left"), R = tableShape("right");
+  // columns aligned by header name
+  const cols = [];
+  const rIndex = new Map(R.headers.map((h, i) => [h, i]));
+  const lNames = new Set(L.headers);
+  L.headers.forEach((h, i) => cols.push({ name: h, li: i, ri: rIndex.has(h) ? rIndex.get(h) : -1 }));
+  R.headers.forEach((h, i) => { if (!lNames.has(h)) cols.push({ name: h, li: -1, ri: i }); });
+  // key options
+  const keyOpts = cols.filter(c => c.li >= 0 && c.ri >= 0).map(c => c.name);
+  if (G.key === null) {
+    G.key = "#row";
+    if (G.opts.header && keyOpts.length) {
+      const c = cols.find(x => x.name === keyOpts[0]);
+      const uniq = (data, i) => { const s = new Set(); for (const r of data) { const v = cellNorm(r[i]); if (!v || s.has(v)) return false; s.add(v); } return data.length > 0; };
+      if (uniq(L.data, c.li) && uniq(R.data, c.ri)) G.key = c.name;
+    }
+  }
+  if (G.key !== "#row" && !keyOpts.includes(G.key)) G.key = "#row";
+  const sel = $("#g-key");
+  sel.innerHTML = `<option value="#row">Row number</option>` + keyOpts.map(k => `<option value="${esc(k)}"${k === G.key ? " selected" : ""}>${esc(k)}</option>`).join("");
+  sel.value = G.key;
+
+  const out = []; let dupes = 0;
+  const cmpRow = (lr, rr) => cols.map(c => {
+    const lv = c.li >= 0 && lr ? (lr[c.li] ?? "") : null, rv = c.ri >= 0 && rr ? (rr[c.ri] ?? "") : null;
+    return { lv, rv, same: lv === null || rv === null ? true : cellEq(lv, rv) };
+  });
+  if (G.key === "#row") {
+    const n = Math.max(L.data.length, R.data.length);
+    for (let i = 0; i < n; i++) {
+      const lr = L.data[i], rr = R.data[i];
+      const st = !lr ? "ins" : !rr ? "del" : "match";
+      out.push({ st, label: `${i + L.dataStart}`, lrow: lr ? i + L.dataStart : null, rrow: rr ? i + R.dataStart : null, cells: cmpRow(lr, rr) });
+    }
+  } else {
+    const kc = cols.find(c => c.name === G.key);
+    const keyOf = (data, ci) => { const seen = new Map(); return data.map(r => { const k = cellNorm(r[ci]); const n = (seen.get(k) || 0) + 1; seen.set(k, n); if (n > 1) dupes++; return n > 1 ? k + "\u0000" + n : k; }); };
+    const lk = keyOf(L.data, kc.li), rk = keyOf(R.data, kc.ri);
+    const lMap = new Map(lk.map((k, i) => [k, i])), rSet = new Set(rk);
+    const removedAfter = new Map(); // right index (-1 = before all) -> [left indices]
+    let lastRight = -1;
+    const rPos = new Map(rk.map((k, i) => [k, i]));
+    lk.forEach((k, i) => {
+      if (rSet.has(k)) lastRight = rPos.get(k);
+      else { if (!removedAfter.has(lastRight)) removedAfter.set(lastRight, []); removedAfter.get(lastRight).push(i); }
+    });
+    const pushRemoved = at => { for (const i of removedAfter.get(at) || []) out.push({ st: "del", label: L.data[i][kc.li], lrow: i + L.dataStart, rrow: null, cells: cmpRow(L.data[i], null) }); };
+    pushRemoved(-1);
+    rk.forEach((k, j) => {
+      const rr = R.data[j];
+      if (lMap.has(k)) { const i = lMap.get(k); out.push({ st: "match", label: rr[kc.ri], lrow: i + L.dataStart, rrow: j + R.dataStart, cells: cmpRow(L.data[i], rr) }); }
+      else out.push({ st: "ins", label: rr[kc.ri], lrow: null, rrow: j + R.dataStart, cells: cmpRow(null, rr) });
+      pushRemoved(j);
+    });
+  }
+  for (const r of out) if (r.st === "match") r.st = r.cells.every(c => c.same) ? "same" : "chg";
+  const changedCols = new Set();
+  out.forEach(r => r.cells.forEach((c, i) => { if (!c.same || r.st === "del" || r.st === "ins") changedCols.add(i); }));
+  cols.forEach((c, i) => { if (c.li < 0 || c.ri < 0) changedCols.add(i); });
+  G.result = { cols, rows: out, dupes, changedCols, keyName: G.key === "#row" ? "Row" : G.key };
+}
+function tableRender() {
+  const { cols, rows, dupes, changedCols, keyName } = G.result;
+  const c = { same: 0, chg: 0, del: 0, ins: 0 }; let cells = 0;
+  for (const r of rows) { c[r.st]++; if (r.st === "chg") cells += r.cells.filter(x => !x.same).length; }
+  const colAdded = cols.filter(x => x.li < 0).length, colRemoved = cols.filter(x => x.ri < 0).length;
+  const allSame = !c.chg && !c.del && !c.ins && !colAdded && !colRemoved;
+  $("#g-summary").innerHTML = allSame
+    ? `<span class="chip ok"><b>Identical</b> ${fmtNum(c.same)} rows</span>`
+    : `<span class="chip"><b>${fmtNum(c.same)}</b> rows unchanged</span>
+       <span class="chip chg"><b>${fmtNum(c.chg)}</b> rows changed · <b>${fmtNum(cells)}</b> cells</span>
+       <span class="chip del"><b>${fmtNum(c.del)}</b> left only</span>
+       <span class="chip ins"><b>${fmtNum(c.ins)}</b> right only</span>
+       ${colAdded || colRemoved ? `<span class="chip"><b>${colRemoved}</b> column${colRemoved === 1 ? "" : "s"} removed · <b>${colAdded}</b> added</span>` : ""}`;
+  const visCols = cols.map((col, i) => i).filter(i => cols[i].name !== G.key && (!G.opts.cols || changedCols.has(i)));
+  const list = G.opts.only ? rows.filter(r => r.st !== "same") : rows;
+  if (!list.length) {
+    $("#g-view").innerHTML = `<div class="empty-state"><strong>${allSame ? "Tables match" : "No row differences"}</strong>${allSame ? "Every matched cell is equal with the current options." : "Differences are in the columns only."} Untick Differences only to see all rows.</div>`;
+    return;
+  }
+  const out = [];
+  if (dupes) out.push(`<div class="warnline">${fmtNum(dupes)} duplicate key value${dupes === 1 ? "" : "s"} in “${esc(G.key)}”. Duplicates are matched in order of appearance.</div>`);
+  out.push(`<table class="grid"><thead><tr><th>Result</th><th class="mono">${esc(keyName)}</th><th class="num">Rows L / R</th>`);
+  for (const i of visCols) {
+    const col = cols[i];
+    const cls = col.li < 0 ? "col-ins" : col.ri < 0 ? "col-del" : "";
+    const note = col.li < 0 ? "right only" : col.ri < 0 ? "left only" : "";
+    out.push(`<th class="${cls}">${esc(col.name)}${note ? `<span class="colnote">${note}</span>` : ""}</th>`);
+  }
+  out.push(`</tr></thead><tbody>`);
+  const STL = { same: ["same", "Same"], chg: ["diff", "Changed"], del: ["left", "Left only"], ins: ["right", "Right only"] };
+  for (const r of list.slice(0, G.limit)) {
+    out.push(`<tr class="${r.st === "del" ? "row-del" : r.st === "ins" ? "row-ins" : ""}"><td><span class="status ${STL[r.st][0]}">${STL[r.st][1]}</span></td>`);
+    out.push(`<td class="mono">${esc(r.label ?? "")}</td><td class="num mono">${r.lrow ?? "–"} / ${r.rrow ?? "–"}</td>`);
+    for (const i of visCols) {
+      const cell = r.cells[i];
+      if (r.st === "chg" && !cell.same) out.push(`<td class="cell-chg"><del>${esc(cell.lv) || "<i>empty</i>"}</del><ins>${esc(cell.rv) || "<i>empty</i>"}</ins></td>`);
+      else out.push(`<td>${esc(cell.lv ?? cell.rv ?? "")}</td>`);
+    }
+    out.push(`</tr>`);
+  }
+  out.push(`</tbody></table>`);
+  if (list.length > G.limit) out.push(`<div class="more"><button class="btn" id="g-more">Show ${fmtNum(Math.min(500, list.length - G.limit))} more of ${fmtNum(list.length - G.limit)} remaining rows</button></div>`);
+  $("#g-view").innerHTML = out.join("");
+}
+function tableSources() {
+  for (const side of ["left", "right"]) {
+    const s = G.side[side]; const rows = s.sheets[s.sheet] || [];
+    const width = rows.reduce((m, r) => Math.max(m, r.length), 0);
+    const sheetSel = s.sheetNames.length > 1
+      ? `<label class="field">Sheet <select data-sheet="${side}">${s.sheetNames.map(n => `<option${n === s.sheet ? " selected" : ""}>${esc(n)}</option>`).join("")}</select></label>` : "";
+    renderSource($("#g-" + side), side, { name: s.name, example: s.example, meta: `${fmtNum(rows.length)} rows × ${fmtNum(width)} columns` },
+      `<button class="btn" data-open="${side}">Open file</button>${sheetSel}`);
+  }
+  $("#g-notice").hidden = !(G.side.left.example && G.side.right.example);
+}
+function tableRefresh() { tableSources(); tableCompute(); tableRender(); }
+function tableInit() {
+  for (const [id, key] of [["g-header", "header"], ["g-ws", "ws"], ["g-case", "case"], ["g-num", "num"], ["g-only", "only"], ["g-cols", "cols"]]) {
+    const el = $("#" + id); el.checked = G.opts[key];
+    el.addEventListener("change", () => {
+      G.opts[key] = el.checked; store.set("table-opts", G.opts);
+      if (key === "header") G.key = null;
+      if (key === "only" || key === "cols") tableRender(); else { tableCompute(); tableRender(); }
+    });
+  }
+  $("#g-key").addEventListener("change", e => { G.key = e.target.value; G.limit = 500; tableCompute(); tableRender(); });
+  $("#g-swap").onclick = () => { [G.side.left, G.side.right] = [G.side.right, G.side.left]; tableRefresh(); };
+  $("#mode-tables").addEventListener("click", async e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.open) tableLoadFile(b.dataset.open, await pickFile(".csv,.tsv,.tab,.txt,.xlsx,.xlsm,.xls,.ods"));
+    else if (b.id === "g-more") { G.limit += 500; tableRender(); }
+  });
+  $("#mode-tables").addEventListener("change", e => {
+    const s = e.target.closest("select[data-sheet]"); if (!s) return;
+    G.side[s.dataset.sheet].sheet = s.value; G.key = null; tableRefresh();
+  });
+  for (const side of ["left", "right"]) wireDrop($("#g-" + side), dt => tableLoadFile(side, dt.files[0]));
+  const mk = (name, csv) => ({ name, sheets: { Sheet1: parseDelimited(csv) }, sheetNames: ["Sheet1"], sheet: "Sheet1", example: true });
+  G.side.left = mk("VCD_extract_issue3.csv", SAMPLE_CSV_LEFT);
+  G.side.right = mk("VCD_extract_issue4.csv", SAMPLE_CSV_RIGHT);
+  tableRefresh();
+}
+
+/* ============================================================
+   HEX MODE
+   ============================================================ */
+const H = { side: { left: null, right: null }, page: 0, rowsPerPage: 32, diffCount: 0, firstDiff: -1 };
+const BPR = 16;
+function hexLoadBytes(side, name, bytes, extra) {
+  H.side[side] = Object.assign({ name, bytes, example: false }, extra || {});
+  if (H.side.left && H.side.right) hexRefresh();
+}
+async function hexLoadFile(side, file) {
+  if (!file) return;
+  if (file.size > 200 * 1048576) { toast("Files over 200 MB are too large to compare in the browser."); return; }
+  hexLoadBytes(side, file.name, new Uint8Array(await file.arrayBuffer()));
+}
+function hexScan() {
+  const a = H.side.left.bytes, b = H.side.right.bytes;
+  const n = Math.min(a.length, b.length);
+  let cnt = 0, first = -1;
+  for (let i = 0; i < n; i++) if (a[i] !== b[i]) { cnt++; if (first < 0) first = i; }
+  const tail = Math.abs(a.length - b.length);
+  if (tail && first < 0) first = n;
+  H.diffCount = cnt; H.tail = tail; H.firstDiff = first;
+}
+function hexDiffAt(i) {
+  const a = H.side.left.bytes, b = H.side.right.bytes;
+  return i >= a.length || i >= b.length ? (i < Math.max(a.length, b.length)) : a[i] !== b[i];
+}
+function hexFindDiffRow(fromRow, dir) {
+  const max = Math.max(H.side.left.bytes.length, H.side.right.bytes.length);
+  const rows = Math.ceil(max / BPR);
+  for (let r = fromRow; r >= 0 && r < rows; r += dir) {
+    for (let k = 0; k < BPR; k++) { const i = r * BPR + k; if (i < max && hexDiffAt(i)) return r; }
+  }
+  return -1;
+}
+const hex2 = v => v.toString(16).toUpperCase().padStart(2, "0");
+const asciiOf = v => (v >= 32 && v < 127) ? esc(String.fromCharCode(v)) : "·";
+function hexRender(highlightRow) {
+  const a = H.side.left.bytes, b = H.side.right.bytes;
+  const max = Math.max(a.length, b.length);
+  const totalRows = Math.max(1, Math.ceil(max / BPR));
+  const pages = Math.ceil(totalRows / H.rowsPerPage);
+  H.page = Math.min(Math.max(0, H.page), pages - 1);
+  const identical = !H.diffCount && !H.tail;
+  $("#h-summary").innerHTML = identical
+    ? `<span class="chip ok"><b>Identical</b> ${fmtBytes(a.length)}</span>`
+    : `<span class="chip chg"><b>${fmtNum(H.diffCount)}</b> bytes differ</span>
+       ${H.tail ? `<span class="chip ${a.length > b.length ? "del" : "ins"}"><b>${fmtNum(H.tail)}</b> extra bytes ${a.length > b.length ? "left" : "right"}</span>` : ""}
+       <span class="chip">First difference at <b>0x${H.firstDiff.toString(16).toUpperCase()}</b></span>
+       <span class="chip">Page <b>${H.page + 1}</b> of ${fmtNum(pages)}</span>`;
+  const head = Array.from({ length: BPR }, (_, k) => `<th>${hex2(k)}</th>`).join("");
+  const out = [`<table class="hex"><thead><tr><th>Offset</th>${head}<th></th><th>Left ASCII</th><th class="gapcol"></th>${head}<th></th><th>Right ASCII</th></tr></thead><tbody>`];
+  const start = H.page * H.rowsPerPage;
+  for (let r = start; r < Math.min(totalRows, start + H.rowsPerPage); r++) {
+    let lh = "", la = "", rh = "", ra = "", any = false;
+    for (let k = 0; k < BPR; k++) {
+      const i = r * BPR + k;
+      const inA = i < a.length, inB = i < b.length;
+      const d = inA && inB ? a[i] !== b[i] : (inA !== inB);
+      if (d) any = true;
+      const clsL = !inA ? "x" : d ? (inB ? "d" : "rem") : "";
+      const clsR = !inB ? "x" : d ? (inA ? "d" : "add") : "";
+      lh += `<td class="${clsL}">${inA ? hex2(a[i]) : "··"}</td>`;
+      rh += `<td class="${clsR}">${inB ? hex2(b[i]) : "··"}</td>`;
+      la += inA ? (clsL ? `<b class="${clsL}">${asciiOf(a[i])}</b>` : asciiOf(a[i])) : " ";
+      ra += inB ? (clsR ? `<b class="${clsR}">${asciiOf(b[i])}</b>` : asciiOf(b[i])) : " ";
+    }
+    out.push(`<tr class="${any ? "hasdiff" : ""}"${r === highlightRow ? ' id="h-target"' : ""}><td class="off">${(r * BPR).toString(16).toUpperCase().padStart(8, "0")}</td>${lh}<td class="sep"></td><td class="asc">${la}</td><td class="gapcol"></td>${rh}<td class="sep"></td><td class="asc">${ra}</td></tr>`);
+  }
+  out.push("</tbody></table>");
+  $("#h-view").innerHTML = out.join("");
+  $("#h-prevpage").disabled = H.page === 0; $("#h-nextpage").disabled = H.page >= pages - 1;
+  $("#h-prev").disabled = $("#h-next").disabled = identical;
+  const t = document.getElementById("h-target"); if (t) t.scrollIntoView({ block: "nearest" });
+}
+function hexSources() {
+  for (const side of ["left", "right"]) {
+    const s = H.side[side];
+    renderSource($("#h-" + side), side, { name: s.name, example: s.example, meta: `${fmtNum(s.bytes.length)} bytes · ${fmtBytes(s.bytes.length)}` },
+      `<button class="btn" data-open="${side}">Open file</button>`);
+  }
+  $("#h-notice").hidden = !(H.side.left.example && H.side.right.example);
+}
+function hexRefresh() { hexScan(); hexSources(); H.page = H.firstDiff > 0 ? Math.floor(H.firstDiff / BPR / H.rowsPerPage) : 0; H.cursor = -1; hexRender(); }
+function hexJumpDiff(dir) {
+  const curRow = H.cursor >= 0 ? H.cursor : H.page * H.rowsPerPage - (dir > 0 ? 1 : 0);
+  const r = hexFindDiffRow(curRow + dir, dir);
+  if (r < 0) { toast(dir > 0 ? "No more differences after this point" : "No differences before this point"); return; }
+  H.cursor = r; H.page = Math.floor(r / H.rowsPerPage); hexRender(r);
+}
+function hexInit() {
+  $("#mode-hex").addEventListener("click", async e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.open) hexLoadFile(b.dataset.open, await pickFile());
+  });
+  for (const side of ["left", "right"]) wireDrop($("#h-" + side), dt => hexLoadFile(side, dt.files[0]));
+  $("#h-swap").onclick = () => { [H.side.left, H.side.right] = [H.side.right, H.side.left]; hexRefresh(); };
+  $("#h-prevpage").onclick = () => { H.page--; H.cursor = -1; hexRender(); };
+  $("#h-nextpage").onclick = () => { H.page++; H.cursor = -1; hexRender(); };
+  $("#h-next").onclick = () => hexJumpDiff(1);
+  $("#h-prev").onclick = () => hexJumpDiff(-1);
+  const go = () => {
+    const v = $("#h-goto").value.trim(); if (!v) return;
+    const off = /^0x/i.test(v) ? parseInt(v, 16) : /[a-f]/i.test(v) ? parseInt(v, 16) : parseInt(v, 10);
+    if (!Number.isFinite(off) || off < 0) { toast("Enter an offset like 0x1F0 or 496"); return; }
+    const r = Math.floor(off / BPR); H.cursor = r; H.page = Math.floor(r / H.rowsPerPage); hexRender(r);
+  };
+  $("#h-go").onclick = go;
+  $("#h-goto").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+  H.side.left = { name: "tm_frame_0412.bin", bytes: sampleFrame(false), example: true };
+  H.side.right = { name: "tm_frame_0413.bin", bytes: sampleFrame(true), example: true };
+  hexRefresh();
+}
+function sampleFrame(v2) {
+  const f = new Uint8Array(64);
+  // CCSDS space packet primary header: version/type/APID, sequence flags + count, data length
+  f.set([0x08, 0x64, 0xC0, v2 ? 0x1D : 0x1C, 0x00, 0x39]);
+  // secondary header: coarse time (4 bytes) + fine time (2 bytes)
+  f.set([0x4E, 0x2A, 0x91, v2 ? 0x41 : 0x40, 0x80, 0x00], 6);
+  const label = new TextEncoder().encode(v2 ? "IASI L1C OK  " : "IASI L1C OK  ");
+  f.set(label, 12);
+  for (let i = 25; i < 62; i++) f[i] = (i * 7 + 3) & 0xFF;
+  if (v2) { f[33] = 0xA5; f[34] = 0x5A; f[47] = 0x00; }
+  f[62] = v2 ? 0x9B : 0x3C; f[63] = v2 ? 0x71 : 0xE2; // checksum
+  return f;
+}
+
+/* ============================================================
+   Modes and routing
+   ============================================================ */
+const MODES = ["text", "folders", "tables", "hex"];
+let currentMode = "text";
+function showMode() {
+  const h = location.hash.replace("#", "");
+  currentMode = MODES.includes(h) ? h : store.get("mode", "text");
+  for (const m of MODES) $("#mode-" + m).hidden = m !== currentMode;
+  document.querySelectorAll("nav.tabs a").forEach(a => { if (a.dataset.mode === currentMode) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+  store.set("mode", currentMode);
+}
+
+/* ============================================================
+   Example content
+   ============================================================ */
+const SAMPLE_TEXT_LEFT = `"""Check product timeliness against the dissemination target."""
+import csv
+from datetime import datetime, timedelta
+
+TARGET = timedelta(minutes=180)
+
+def load_products(path):
+    with open(path, newline="") as fh:
+        return list(csv.DictReader(fh))
+
+def timeliness(product):
+    sensing_end = datetime.fromisoformat(product["sensing_end"])
+    available = datetime.fromisoformat(product["available_at"])
+    return available - sensing_end
+
+def check(path):
+    late = []
+    for product in load_products(path):
+        delay = timeliness(product)
+        if delay > TARGET:
+            late.append((product["name"], delay))
+    return late
+
+def report(late):
+    print(f"{len(late)} late products")
+    for name, delay in late:
+        print(f"  {name}: {delay}")
+
+if __name__ == "__main__":
+    report(check("products.csv"))
+`;
+const SAMPLE_TEXT_RIGHT = `"""Check product timeliness against the dissemination target."""
+import csv
+import sys
+from datetime import datetime, timedelta
+
+TARGETS = {"GLOBAL": timedelta(minutes=180), "REGIONAL": timedelta(minutes=30)}
+
+def load_products(path):
+    with open(path, newline="", encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
+
+def timeliness(product):
+    sensing_end = datetime.fromisoformat(product["sensing_end"])
+    available = datetime.fromisoformat(product["available_at"])
+    return available - sensing_end
+
+def check(path):
+    late = []
+    for product in load_products(path):
+        delay = timeliness(product)
+        target = TARGETS.get(product["coverage"], TARGETS["GLOBAL"])
+        if delay > target:
+            late.append((product["name"], delay, target))
+    return late
+
+def report(late):
+    print(f"{len(late)} late products")
+    for name, delay, target in late:
+        print(f"  {name}: {delay} (target {target})")
+    return 1 if late else 0
+
+if __name__ == "__main__":
+    sys.exit(report(check(sys.argv[1] if len(sys.argv) > 1 else "products.csv")))
+`;
+const SAMPLE_CSV_LEFT = `Req ID,Title,Verification Method,Status,Evidence
+SYS-REQ-101,Ingest Level 0 data within 10 minutes,Test,Closed,TR-0412
+SYS-REQ-102,Generate Level 1C products for each orbit,Test,Closed,TR-0415
+SYS-REQ-103,Disseminate global products within 180 minutes,Test,Open,
+SYS-REQ-104,Archive all products for mission lifetime,Inspection,Closed,IR-0031
+SYS-REQ-105,Report product completeness daily,Analysis,Open,
+SYS-REQ-106,Flag degraded quality in product metadata,Test,Pending,TR-0420
+SYS-REQ-107,Support reprocessing campaigns,Review of design,Closed,RD-0007
+`;
+const SAMPLE_CSV_RIGHT = `Req ID,Title,Verification Method,Status,Evidence,Closure Date
+SYS-REQ-101,Ingest Level 0 data within 10 minutes,Test,Closed,TR-0412,2026-03-02
+SYS-REQ-102,Generate Level 1C products for each orbit,Test,Closed,TR-0415,2026-03-02
+SYS-REQ-103,Disseminate global products within 180 minutes,Test,Closed,TR-0433,2026-10-14
+SYS-REQ-104,Archive all products for mission lifetime,Inspection,Closed,IR-0031,2026-01-20
+SYS-REQ-105,Report product completeness daily,Test,Open,,
+SYS-REQ-106,Flag degraded quality in product metadata,Test,Closed,TR-0420,2026-09-30
+SYS-REQ-108,Disseminate regional products within 30 minutes,Test,Open,,
+`;
+const SAMPLE_FOLDER_LEFT = [
+  ["README.md", "# PDAP tools\nVersion 1.4\n"],
+  ["config/targets.yaml", "global_minutes: 180\n"],
+  ["config/products.csv", "name,coverage\nIASI_L1C,GLOBAL\nMWS_L1B,GLOBAL\n"],
+  ["src/timeliness_check.py", SAMPLE_TEXT_LEFT],
+  ["src/completeness.py", "def completeness(found, expected):\n    return found / expected\n"],
+  ["src/legacy_export.py", "# deprecated exporter\n"],
+  ["tests/test_timeliness.py", "def test_target():\n    assert True\n"]
+];
+const SAMPLE_FOLDER_RIGHT = [
+  ["README.md", "# PDAP tools\nVersion 1.5\n"],
+  ["config/targets.yaml", "global_minutes: 180\nregional_minutes: 30\n"],
+  ["config/products.csv", "name,coverage\nIASI_L1C,GLOBAL\nMWS_L1B,GLOBAL\n"],
+  ["src/timeliness_check.py", SAMPLE_TEXT_RIGHT],
+  ["src/completeness.py", "def completeness(found, expected):\n    return found / expected\n"],
+  ["src/report_html.py", "def render(rows):\n    return '<table></table>'\n"],
+  ["tests/test_timeliness.py", "def test_target():\n    assert True\n"],
+  ["tests/test_regional.py", "def test_regional():\n    assert True\n"]
+];
+
+/* ============================================================
+   Boot
+   ============================================================ */
+textInit(); folderInit(); tableInit(); hexInit();
+window.addEventListener("hashchange", showMode);
+showMode();
+// Prevent the browser from opening files dropped outside a drop zone
+window.addEventListener("dragover", e => e.preventDefault());
+window.addEventListener("drop", e => e.preventDefault());
+</script>
+
+</body>
+</html>
